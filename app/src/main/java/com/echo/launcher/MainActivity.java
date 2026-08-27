@@ -1,359 +1,477 @@
 package com.echo.launcher;
 
 import android.app.Activity;
-import android.os.Bundle;
-import android.os.Build;
+import android.app.WallpaperManager;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-import android.util.Base64;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
+import android.os.Handler;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowInsets;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.view.WindowManager;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
 
-    private WebView webView;
+    private LinearLayout root;
+    private LinearLayout appContainer;
+    private TextView clock;
+    private TextView date;
+    private EditText searchBox;
+
+    private final Handler handler = new Handler();
+    private final List<ApplicationInfo> allApps = new ArrayList<>();
+
+    private float downY;
+    private static final int BG = Color.rgb(8, 10, 16);
+    private static final int CARD = Color.rgb(20, 23, 32);
+    private static final int TEXT = Color.WHITE;
+    private static final int MUTED = Color.rgb(160, 165, 178);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Window window = getWindow();
+        window.setStatusBarColor(BG);
+        window.setNavigationBarColor(BG);
 
-        window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
-        window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.setDecorFitsSystemWindows(false);
-
-            window.getInsetsController().hide(
-                    WindowInsets.Type.statusBars()
-            );
-
-            window.getInsetsController().setSystemBarsBehavior(
-                    WindowInsets.Controller.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            );
-        } else {
-
-            window.getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            );
-        }
-
-        webView = new WebView(this);
-
-        WebSettings settings =
-                webView.getSettings();
-
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-
-        webView.setBackgroundColor(
-                android.graphics.Color.rgb(5, 6, 10)
-        );
-
-        webView.setWebViewClient(
-                new WebViewClient()
-        );
-
-        webView.addJavascriptInterface(
-                new AndroidBridge(),
-                "Android"
-        );
-
-        webView.loadUrl(
-                "file:///android_asset/index.html"
-        );
-
-        setContentView(webView);
+        buildHome();
+        updateClock();
+        loadApps();
     }
 
+    private int dp(float value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
 
-    public class AndroidBridge {
+    private GradientDrawable roundedBackground(int color, float radius) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(dp(radius));
+        return drawable;
+    }
 
-        @JavascriptInterface
-        public void getApps() {
+    private TextView makeText(String text, float size, int color) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextSize(size);
+        tv.setTextColor(color);
+        tv.setGravity(Gravity.CENTER_VERTICAL);
+        return tv;
+    }
 
-            runOnUiThread(() -> {
+    private void buildHome() {
 
-                String json =
-                        getInstalledApps();
+        root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(22), dp(32), dp(22), dp(18));
+        root.setBackgroundColor(BG);
 
-                webView.evaluateJavascript(
-                        "receiveApps(" +
-                                JSONObject.quote(json) +
-                                ")",
-                        null
+        // TOP BRAND
+        TextView brand = makeText("ECHO", 25, TEXT);
+        brand.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        brand.setGravity(Gravity.CENTER);
+
+        root.addView(
+                brand,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(50)
+                )
+        );
+
+        // CLOCK
+        clock = makeText("", 54, TEXT);
+        clock.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        clock.setGravity(Gravity.CENTER);
+
+        root.addView(
+                clock,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(75)
+                )
+        );
+
+        // DATE
+        date = makeText("", 16, MUTED);
+        date.setGravity(Gravity.CENTER);
+
+        root.addView(
+                date,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(35)
+                )
+        );
+
+        // SEARCH
+        searchBox = new EditText(this);
+        searchBox.setSingleLine(true);
+        searchBox.setTextColor(TEXT);
+        searchBox.setHintTextColor(MUTED);
+        searchBox.setHint("Search apps");
+        searchBox.setTextSize(16);
+        searchBox.setPadding(dp(20), 0, dp(20), 0);
+        searchBox.setBackground(
+                roundedBackground(CARD, 60)
+        );
+
+        LinearLayout.LayoutParams searchParams =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(54)
                 );
 
-            });
-        }
+        searchParams.setMargins(0, dp(20), 0, dp(18));
 
+        root.addView(searchBox, searchParams);
 
-        @JavascriptInterface
-        public void launchApp(String packageName) {
+        // APP DRAWER
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setVerticalScrollBarEnabled(false);
 
-            try {
+        appContainer = new LinearLayout(this);
+        appContainer.setOrientation(LinearLayout.VERTICAL);
+        appContainer.setPadding(0, dp(4), 0, dp(30));
 
-                PackageManager pm =
-                        getPackageManager();
+        scroll.addView(appContainer);
 
-                Intent launchIntent =
-                        pm.getLaunchIntentForPackage(
-                                packageName
-                        );
+        root.addView(
+                scroll,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        0,
+                        1
+                )
+        );
 
-                if (launchIntent != null) {
+        // BOTTOM BAR
+        LinearLayout bottom = new LinearLayout(this);
+        bottom.setGravity(Gravity.CENTER);
+        bottom.setPadding(dp(8), dp(8), dp(8), dp(8));
+        bottom.setBackground(
+                roundedBackground(CARD, 35)
+        );
 
-                    launchIntent.addFlags(
-                            Intent.FLAG_ACTIVITY_NEW_TASK
-                    );
+        TextView homeButton = makeText("⌂   HOME", 14, TEXT);
+        homeButton.setGravity(Gravity.CENTER);
 
-                    startActivity(launchIntent);
+        bottom.addView(
+                homeButton,
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(50),
+                        1
+                )
+        );
+
+        TextView appsButton = makeText("▦   APPS", 14, MUTED);
+        appsButton.setGravity(Gravity.CENTER);
+
+        bottom.addView(
+                appsButton,
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(50),
+                        1
+                )
+        );
+
+        root.addView(
+                bottom,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(66)
+                )
+        );
+
+        setContentView(root);
+
+        // SEARCH FILTER
+        searchBox.setOnEditorActionListener((v, actionId, event) -> {
+            filterApps(searchBox.getText().toString());
+            return false;
+        });
+
+        searchBox.setOnKeyListener((v, keyCode, event) -> {
+            filterApps(searchBox.getText().toString());
+            return false;
+        });
+
+        // SWIPE-UP APP DRAWER
+        root.setOnTouchListener((v, event) -> {
+
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                downY = event.getY();
+                return true;
+            }
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+
+                float distance = downY - event.getY();
+
+                if (distance > dp(100)) {
+                    showAppDrawer();
                 }
 
-            } catch (Exception e) {
-
-                e.printStackTrace();
-
+                return true;
             }
-        }
+
+            return true;
+        });
     }
 
+    private void updateClock() {
 
-    private String getInstalledApps() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
 
-        JSONArray array =
-                new JSONArray();
+                Date now = new Date();
 
-        PackageManager pm =
-                getPackageManager();
+                SimpleDateFormat timeFormat =
+                        new SimpleDateFormat(
+                                "HH:mm",
+                                Locale.getDefault()
+                        );
 
-        Intent intent =
-                new Intent(
-                        Intent.ACTION_MAIN,
-                        null
+                SimpleDateFormat dateFormat =
+                        new SimpleDateFormat(
+                                "EEEE, d MMMM",
+                                Locale.getDefault()
+                        );
+
+                if (clock != null) {
+                    clock.setText(
+                            timeFormat.format(now)
+                    );
+                }
+
+                if (date != null) {
+                    date.setText(
+                            dateFormat.format(now)
+                    );
+                }
+
+                handler.postDelayed(this, 1000);
+            }
+        }, 0);
+    }
+
+    private void loadApps() {
+
+        PackageManager pm = getPackageManager();
+
+        List<ApplicationInfo> apps =
+                pm.getInstalledApplications(
+                        PackageManager.GET_META_DATA
                 );
 
-        intent.addCategory(
-                Intent.CATEGORY_LAUNCHER
-        );
+        allApps.clear();
 
-        List<ResolveInfo> results =
-                pm.queryIntentActivities(
-                        intent,
-                        PackageManager.MATCH_ALL
-                );
+        for (ApplicationInfo app : apps) {
 
-        List<AppItem> apps =
-                new ArrayList<>();
+            if (pm.getLaunchIntentForPackage(
+                    app.packageName
+            ) != null) {
 
-        for (ResolveInfo info : results) {
-
-            try {
-
-                String packageName =
-                        info.activityInfo.packageName;
-
-                ApplicationInfo appInfo =
-                        info.activityInfo.applicationInfo;
-
-                String name =
-                        info.loadLabel(pm).toString();
-
-                Drawable icon =
-                        info.loadIcon(pm);
-
-                String encodedIcon =
-                        drawableToBase64(icon);
-
-                apps.add(
-                        new AppItem(
-                                name,
-                                packageName,
-                                encodedIcon
-                        )
-                );
-
-            } catch (Exception ignored) {
+                allApps.add(app);
             }
         }
 
         Collections.sort(
-                apps,
-                new Comparator<AppItem>() {
-
-                    @Override
-                    public int compare(
-                            AppItem a,
-                            AppItem b
-                    ) {
-
-                        return a.name.compareToIgnoreCase(
-                                b.name
-                        );
-                    }
-                }
+                allApps,
+                (a, b) -> pm.getApplicationLabel(a)
+                        .toString()
+                        .compareToIgnoreCase(
+                                pm.getApplicationLabel(b)
+                                        .toString()
+                        )
         );
 
-        for (AppItem app : apps) {
+        displayApps(allApps);
+    }
 
-            try {
+    private void displayApps(
+            List<ApplicationInfo> apps
+    ) {
 
-                JSONObject object =
-                        new JSONObject();
+        if (appContainer == null) {
+            return;
+        }
 
-                object.put(
-                        "name",
-                        app.name
-                );
+        appContainer.removeAllViews();
 
-                object.put(
-                        "package",
-                        app.packageName
-                );
+        PackageManager pm = getPackageManager();
 
-                object.put(
-                        "icon",
-                        app.icon
-                );
+        for (ApplicationInfo app : apps) {
 
-                array.put(object);
+            String name =
+                    pm.getApplicationLabel(app)
+                            .toString();
 
-            } catch (Exception ignored) {
+            TextView item =
+                    makeText(
+                            "   " + name,
+                            18,
+                            TEXT
+                    );
+
+            item.setTypeface(
+                    Typeface.DEFAULT,
+                    Typeface.NORMAL
+            );
+
+            item.setPadding(
+                    dp(12),
+                    0,
+                    dp(12),
+                    0
+            );
+
+            item.setBackground(
+                    roundedBackground(CARD, 24)
+            );
+
+            LinearLayout.LayoutParams params =
+                    new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(58)
+                    );
+
+            params.setMargins(
+                    0,
+                    dp(5),
+                    0,
+                    dp(5)
+            );
+
+            appContainer.addView(item, params);
+
+            item.setOnClickListener(v -> {
+
+                Intent launch =
+                        pm.getLaunchIntentForPackage(
+                                app.packageName
+                        );
+
+                if (launch != null) {
+                    startActivity(launch);
+                }
+            });
+
+            // Simple press animation
+            item.setOnTouchListener(
+                    (v, event) -> {
+
+                        if (event.getAction() ==
+                                MotionEvent.ACTION_DOWN) {
+
+                            v.animate()
+                                    .scaleX(0.97f)
+                                    .scaleY(0.97f)
+                                    .setDuration(80)
+                                    .start();
+
+                        } else if (
+                                event.getAction() ==
+                                        MotionEvent.ACTION_UP ||
+                                event.getAction() ==
+                                        MotionEvent.ACTION_CANCEL) {
+
+                            v.animate()
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(100)
+                                    .start();
+                        }
+
+                        return false;
+                    }
+            );
+        }
+    }
+
+    private void filterApps(String query) {
+
+        if (query == null) {
+            return;
+        }
+
+        String q =
+                query.trim()
+                        .toLowerCase(
+                                Locale.getDefault()
+                        );
+
+        if (q.isEmpty()) {
+            displayApps(allApps);
+            return;
+        }
+
+        PackageManager pm =
+                getPackageManager();
+
+        List<ApplicationInfo> filtered =
+                new ArrayList<>();
+
+        for (ApplicationInfo app : allApps) {
+
+            String name =
+                    pm.getApplicationLabel(app)
+                            .toString()
+                            .toLowerCase(
+                                    Locale.getDefault()
+                            );
+
+            if (name.contains(q)) {
+                filtered.add(app);
             }
         }
 
-        return array.toString();
+        displayApps(filtered);
     }
 
+    private void showAppDrawer() {
 
-    private String drawableToBase64(
-            Drawable drawable
-    ) {
-
-        try {
-
-            int width =
-                    Math.max(
-                            1,
-                            drawable.getIntrinsicWidth()
-                    );
-
-            int height =
-                    Math.max(
-                            1,
-                            drawable.getIntrinsicHeight()
-                    );
-
-            width = Math.min(width,192);
-            height = Math.min(height,192);
-
-            Bitmap bitmap =
-                    Bitmap.createBitmap(
-                            width,
-                            height,
-                            Bitmap.Config.ARGB_8888
-                    );
-
-            Canvas canvas =
-                    new Canvas(bitmap);
-
-            drawable.setBounds(
-                    0,
-                    0,
-                    canvas.getWidth(),
-                    canvas.getHeight()
-            );
-
-            drawable.draw(canvas);
-
-            ByteArrayOutputStream output =
-                    new ByteArrayOutputStream();
-
-            bitmap.compress(
-                    Bitmap.CompressFormat.PNG,
-                    90,
-                    output
-            );
-
-            return Base64.encodeToString(
-                    output.toByteArray(),
-                    Base64.NO_WRAP
-            );
-
-        } catch (Exception e) {
-
-            return "";
-
+        if (appContainer == null) {
+            return;
         }
+
+        appContainer.setAlpha(0f);
+        appContainer.setTranslationY(dp(80));
+
+        appContainer.animate()
+                .alpha(1f)
+                .translationY(0)
+                .setDuration(350)
+                .start();
     }
-
-
-    private static class AppItem {
-
-        String name;
-        String packageName;
-        String icon;
-
-        AppItem(
-                String name,
-                String packageName,
-                String icon
-        ) {
-
-            this.name =
-                    name;
-
-            this.packageName =
-                    packageName;
-
-            this.icon =
-                    icon;
-        }
-    }
-
 
     @Override
-    public void onBackPressed() {
+    protected void onDestroy() {
+        super.onDestroy();
 
-        if (webView != null) {
-
-            webView.evaluateJavascript(
-                    "closeDrawer()",
-                    null
-            );
-
-        } else {
-
-            super.onBackPressed();
-
-        }
+        handler.removeCallbacksAndMessages(null);
     }
 }
