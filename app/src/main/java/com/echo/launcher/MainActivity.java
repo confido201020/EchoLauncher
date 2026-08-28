@@ -1,3 +1,4 @@
+```java
 package com.echo.launcher;
 
 import android.app.Activity;
@@ -5,216 +6,776 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Base64;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.os.Handler;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
 
-    private WebView webView;
+    private LinearLayout root;
+    private LinearLayout appContainer;
+    private TextView clock;
+    private TextView date;
+    private EditText searchBox;
+
+    private final Handler handler = new Handler();
+    private final List<ApplicationInfo> allApps = new ArrayList<>();
+
+    private float downY;
+
+    private static final int BG = Color.rgb(8, 10, 16);
+    private static final int CARD = Color.rgb(20, 23, 32);
+    private static final int TEXT = Color.WHITE;
+    private static final int MUTED = Color.rgb(160, 165, 178);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        webView = new WebView(this);
+        Window window = getWindow();
 
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
+        window.setStatusBarColor(BG);
+        window.setNavigationBarColor(BG);
 
-        webView.setBackgroundColor(0x00000000);
-        webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
-        webView.setWebViewClient(new WebViewClient());
-
-        webView.addJavascriptInterface(
-                new AndroidBridge(),
-                "Android"
-        );
-
-        setContentView(webView);
-
-        webView.loadUrl("file:///android_asset/index.html");
+        buildHome();
+        updateClock();
+        loadApps();
     }
 
-    public class AndroidBridge {
+    private int dp(float value) {
+        return (int) (
+                value *
+                getResources()
+                        .getDisplayMetrics()
+                        .density
+                + 0.5f
+        );
+    }
 
-        @JavascriptInterface
-        public void getApps() {
+    private GradientDrawable roundedBackground(
+            int color,
+            float radius
+    ) {
+        GradientDrawable drawable =
+                new GradientDrawable();
 
-            runOnUiThread(() -> {
+        drawable.setColor(color);
+        drawable.setCornerRadius(dp(radius));
 
-                try {
+        return drawable;
+    }
 
-                    PackageManager pm = getPackageManager();
+    private TextView makeText(
+            String text,
+            float size,
+            int color
+    ) {
+        TextView tv = new TextView(this);
 
-                    List<ApplicationInfo> apps =
-                            pm.getInstalledApplications(
-                                    PackageManager.GET_META_DATA
-                            );
+        tv.setText(text);
+        tv.setTextSize(size);
+        tv.setTextColor(color);
+        tv.setGravity(Gravity.CENTER_VERTICAL);
 
-                    Collections.sort(
-                            apps,
-                            new Comparator<ApplicationInfo>() {
-                                @Override
-                                public int compare(
-                                        ApplicationInfo a,
-                                        ApplicationInfo b
-                                ) {
+        return tv;
+    }
 
-                                    String nameA =
-                                            pm.getApplicationLabel(a)
-                                                    .toString();
+    private void buildHome() {
 
-                                    String nameB =
-                                            pm.getApplicationLabel(b)
-                                                    .toString();
+        root = new LinearLayout(this);
 
-                                    return nameA.compareToIgnoreCase(
-                                            nameB
-                                    );
-                                }
-                            }
+        root.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        root.setPadding(
+                dp(22),
+                dp(32),
+                dp(22),
+                dp(18)
+        );
+
+        root.setBackgroundColor(BG);
+
+        // --------------------------------
+        // BRAND
+        // --------------------------------
+
+        TextView brand =
+                makeText(
+                        "ECHO",
+                        25,
+                        TEXT
+                );
+
+        brand.setTypeface(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+        );
+
+        brand.setGravity(Gravity.CENTER);
+
+        root.addView(
+                brand,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(50)
+                )
+        );
+
+        // --------------------------------
+        // CLOCK
+        // --------------------------------
+
+        clock =
+                makeText(
+                        "",
+                        54,
+                        TEXT
+                );
+
+        clock.setTypeface(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+        );
+
+        clock.setGravity(Gravity.CENTER);
+
+        root.addView(
+                clock,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(75)
+                )
+        );
+
+        // --------------------------------
+        // DATE
+        // --------------------------------
+
+        date =
+                makeText(
+                        "",
+                        16,
+                        MUTED
+                );
+
+        date.setGravity(Gravity.CENTER);
+
+        root.addView(
+                date,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(35)
+                )
+        );
+
+        // --------------------------------
+        // SEARCH
+        // --------------------------------
+
+        searchBox = new EditText(this);
+
+        searchBox.setSingleLine(true);
+        searchBox.setTextColor(TEXT);
+        searchBox.setHintTextColor(MUTED);
+        searchBox.setHint("Search apps");
+        searchBox.setTextSize(16);
+
+        searchBox.setPadding(
+                dp(20),
+                0,
+                dp(20),
+                0
+        );
+
+        searchBox.setBackground(
+                roundedBackground(
+                        CARD,
+                        60
+                )
+        );
+
+        LinearLayout.LayoutParams searchParams =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(54)
+                );
+
+        searchParams.setMargins(
+                0,
+                dp(20),
+                0,
+                dp(18)
+        );
+
+        root.addView(
+                searchBox,
+                searchParams
+        );
+
+        // --------------------------------
+        // APP DRAWER
+        // --------------------------------
+
+        ScrollView scroll =
+                new ScrollView(this);
+
+        scroll.setFillViewport(true);
+
+        scroll.setVerticalScrollBarEnabled(false);
+
+        appContainer =
+                new LinearLayout(this);
+
+        appContainer.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        appContainer.setPadding(
+                0,
+                dp(4),
+                0,
+                dp(30)
+        );
+
+        scroll.addView(appContainer);
+
+        root.addView(
+                scroll,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        0,
+                        1
+                )
+        );
+
+        // --------------------------------
+        // BOTTOM BAR
+        // --------------------------------
+
+        LinearLayout bottom =
+                new LinearLayout(this);
+
+        bottom.setGravity(Gravity.CENTER);
+
+        bottom.setPadding(
+                dp(8),
+                dp(8),
+                dp(8),
+                dp(8)
+        );
+
+        bottom.setBackground(
+                roundedBackground(
+                        CARD,
+                        35
+                )
+        );
+
+        TextView homeButton =
+                makeText(
+                        "⌂   HOME",
+                        14,
+                        TEXT
+                );
+
+        homeButton.setGravity(
+                Gravity.CENTER
+        );
+
+        bottom.addView(
+                homeButton,
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(50),
+                        1
+                )
+        );
+
+        TextView appsButton =
+                makeText(
+                        "▦   APPS",
+                        14,
+                        MUTED
+                );
+
+        appsButton.setGravity(
+                Gravity.CENTER
+        );
+
+        bottom.addView(
+                appsButton,
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(50),
+                        1
+                )
+        );
+
+        root.addView(
+                bottom,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(66)
+                )
+        );
+
+        setContentView(root);
+
+        // --------------------------------
+        // SEARCH
+        // --------------------------------
+
+        searchBox.setOnEditorActionListener(
+                (v, actionId, event) -> {
+
+                    filterApps(
+                            searchBox
+                                    .getText()
+                                    .toString()
                     );
 
-                    JSONArray array = new JSONArray();
+                    return false;
+                }
+        );
 
-                    for (ApplicationInfo app : apps) {
+        searchBox.setOnKeyListener(
+                (v, keyCode, event) -> {
+
+                    filterApps(
+                            searchBox
+                                    .getText()
+                                    .toString()
+                    );
+
+                    return false;
+                }
+        );
+
+        // --------------------------------
+        // SWIPE UP
+        // --------------------------------
+
+        root.setOnTouchListener(
+                (v, event) -> {
+
+                    if (
+                            event.getAction()
+                                    == MotionEvent.ACTION_DOWN
+                    ) {
+
+                        downY = event.getY();
+
+                        return true;
+                    }
+
+                    if (
+                            event.getAction()
+                                    == MotionEvent.ACTION_UP
+                    ) {
+
+                        float distance =
+                                downY - event.getY();
+
+                        if (
+                                distance > dp(100)
+                        ) {
+
+                            showAppDrawer();
+                        }
+
+                        return true;
+                    }
+
+                    return true;
+                }
+        );
+    }
+
+    // --------------------------------
+    // CLOCK
+    // --------------------------------
+
+    private void updateClock() {
+
+        handler.postDelayed(
+                new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        Date now =
+                                new Date();
+
+                        SimpleDateFormat
+                                timeFormat =
+                                new SimpleDateFormat(
+                                        "HH:mm",
+                                        Locale.getDefault()
+                                );
+
+                        SimpleDateFormat
+                                dateFormat =
+                                new SimpleDateFormat(
+                                        "EEEE, d MMMM",
+                                        Locale.getDefault()
+                                );
+
+                        if (clock != null) {
+
+                            clock.setText(
+                                    timeFormat
+                                            .format(now)
+                            );
+                        }
+
+                        if (date != null) {
+
+                            date.setText(
+                                    dateFormat
+                                            .format(now)
+                            );
+                        }
+
+                        handler.postDelayed(
+                                this,
+                                1000
+                        );
+                    }
+                },
+                0
+        );
+    }
+
+    // --------------------------------
+    // LOAD APPS
+    // --------------------------------
+
+    private void loadApps() {
+
+        PackageManager pm =
+                getPackageManager();
+
+        List<ApplicationInfo> apps =
+                pm.getInstalledApplications(
+                        PackageManager.GET_META_DATA
+                );
+
+        allApps.clear();
+
+        for (
+                ApplicationInfo app :
+                apps
+        ) {
+
+            if (
+                    pm.getLaunchIntentForPackage(
+                            app.packageName
+                    ) != null
+            ) {
+
+                allApps.add(app);
+            }
+        }
+
+        Collections.sort(
+                allApps,
+                (a, b) ->
+                        pm.getApplicationLabel(a)
+                                .toString()
+                                .compareToIgnoreCase(
+                                        pm.getApplicationLabel(b)
+                                                .toString()
+                                )
+        );
+
+        displayApps(allApps);
+    }
+
+    // --------------------------------
+    // DISPLAY APPS
+    // --------------------------------
+
+    private void displayApps(
+            List<ApplicationInfo> apps
+    ) {
+
+        if (appContainer == null) {
+            return;
+        }
+
+        appContainer.removeAllViews();
+
+        PackageManager pm =
+                getPackageManager();
+
+        for (
+                ApplicationInfo app :
+                apps
+        ) {
+
+            String name =
+                    pm.getApplicationLabel(app)
+                            .toString();
+
+            TextView item =
+                    makeText(
+                            "   " + name,
+                            18,
+                            TEXT
+                    );
+
+            item.setTypeface(
+                    Typeface.DEFAULT,
+                    Typeface.NORMAL
+            );
+
+            item.setPadding(
+                    dp(12),
+                    0,
+                    dp(12),
+                    0
+            );
+
+            item.setBackground(
+                    roundedBackground(
+                            CARD,
+                            24
+                    )
+            );
+
+            LinearLayout.LayoutParams params =
+                    new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(58)
+                    );
+
+            params.setMargins(
+                    0,
+                    dp(5),
+                    0,
+                    dp(5)
+            );
+
+            appContainer.addView(
+                    item,
+                    params
+            );
+
+            item.setOnClickListener(
+                    v -> {
 
                         Intent launch =
                                 pm.getLaunchIntentForPackage(
                                         app.packageName
                                 );
 
-                        if (launch == null) {
-                            continue;
+                        if (launch != null) {
+
+                            startActivity(launch);
+                        }
+                    }
+            );
+
+            // PRESS ANIMATION
+
+            item.setOnTouchListener(
+                    (v, event) -> {
+
+                        if (
+                                event.getAction()
+                                        == MotionEvent.ACTION_DOWN
+                        ) {
+
+                            v.animate()
+                                    .scaleX(0.97f)
+                                    .scaleY(0.97f)
+                                    .setDuration(80)
+                                    .start();
+
+                        } else if (
+                                event.getAction()
+                                        == MotionEvent.ACTION_UP
+                                        ||
+                                event.getAction()
+                                        == MotionEvent.ACTION_CANCEL
+                        ) {
+
+                            v.animate()
+                                    .scaleX(1f)
+                                    .scaleY(1f)
+                                    .setDuration(100)
+                                    .start();
                         }
 
-                        JSONObject object = new JSONObject();
-
-                        String name =
-                                pm.getApplicationLabel(app)
-                                        .toString();
-
-                        object.put(
-                                "name",
-                                name
-                        );
-
-                        object.put(
-                                "package",
-                                app.packageName
-                        );
-
-                        Bitmap icon =
-                                app.loadIcon(pm)
-                                        .getBitmap();
-
-                        ByteArrayOutputStream stream =
-                                new ByteArrayOutputStream();
-
-                        icon.compress(
-                                Bitmap.CompressFormat.PNG,
-                                100,
-                                stream
-                        );
-
-                        String encoded =
-                                Base64.encodeToString(
-                                        stream.toByteArray(),
-                                        Base64.NO_WRAP
-                                );
-
-                        object.put(
-                                "icon",
-                                encoded
-                        );
-
-                        array.put(object);
+                        return false;
                     }
-
-                    String json =
-                            array.toString();
-
-                    webView.evaluateJavascript(
-                            "receiveApps(" +
-                                    JSONObject.quote(json) +
-                                    ");",
-                            null
-                    );
-
-                } catch (Exception e) {
-
-                    e.printStackTrace();
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void launchApp(String packageName) {
-
-            try {
-
-                PackageManager pm =
-                        getPackageManager();
-
-                Intent launch =
-                        pm.getLaunchIntentForPackage(
-                                packageName
-                        );
-
-                if (launch != null) {
-
-                    launch.addFlags(
-                            Intent.FLAG_ACTIVITY_NEW_TASK
-                    );
-
-                    startActivity(launch);
-                }
-
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
+            );
         }
     }
 
-    @Override
-    public void onBackPressed() {
+    // --------------------------------
+    // SEARCH FILTER
+    // --------------------------------
 
-        if (webView != null) {
+    private void filterApps(
+            String query
+    ) {
 
-            webView.evaluateJavascript(
-                    "closeDrawer();",
-                    null
-            );
-
-        } else {
-
-            super.onBackPressed();
+        if (query == null) {
+            return;
         }
+
+        String q =
+                query.trim()
+                        .toLowerCase(
+                                Locale.getDefault()
+                        );
+
+        if (q.isEmpty()) {
+
+            displayApps(allApps);
+
+            return;
+        }
+
+        PackageManager pm =
+                getPackageManager();
+
+        List<ApplicationInfo> filtered =
+                new ArrayList<>();
+
+        for (
+                ApplicationInfo app :
+                allApps
+        ) {
+
+            String name =
+                    pm.getApplicationLabel(app)
+                            .toString()
+                            .toLowerCase(
+                                    Locale.getDefault()
+                            );
+
+            if (name.contains(q)) {
+
+                filtered.add(app);
+            }
+        }
+
+        displayApps(filtered);
+    }
+
+    // --------------------------------
+    // APP DRAWER ANIMATION
+    // --------------------------------
+
+    private void showAppDrawer() {
+
+        if (appContainer == null) {
+            return;
+        }
+
+        appContainer.setAlpha(0f);
+
+        appContainer.setTranslationY(
+                dp(80)
+        );
+
+        appContainer.animate()
+                .alpha(1f)
+                .translationY(0)
+                .setDuration(350)
+                .start();
+    }
+
+    // --------------------------------
+    // DRAWABLE -> BITMAP
+    // --------------------------------
+
+    private Bitmap drawableToBitmap(
+            Drawable drawable
+    ) {
+
+        if (
+                drawable instanceof BitmapDrawable
+        ) {
+
+            Bitmap bitmap =
+                    ((BitmapDrawable) drawable)
+                            .getBitmap();
+
+            if (bitmap != null) {
+
+                return bitmap;
+            }
+        }
+
+        int width =
+                drawable.getIntrinsicWidth();
+
+        int height =
+                drawable.getIntrinsicHeight();
+
+        if (width <= 0) {
+            width = dp(96);
+        }
+
+        if (height <= 0) {
+            height = dp(96);
+        }
+
+        Bitmap bitmap =
+                Bitmap.createBitmap(
+                        width,
+                        height,
+                        Bitmap.Config.ARGB_8888
+                );
+
+        Canvas canvas =
+                new Canvas(bitmap);
+
+        drawable.setBounds(
+                0,
+                0,
+                canvas.getWidth(),
+                canvas.getHeight()
+        );
+
+        drawable.draw(canvas);
+
+        return bitmap;
     }
 
     @Override
     protected void onDestroy() {
 
-        if (webView != null) {
-            webView.destroy();
-        }
-
         super.onDestroy();
+
+        handler.removeCallbacksAndMessages(
+                null
+        );
     }
 }
+```
