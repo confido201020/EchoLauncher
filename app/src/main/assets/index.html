@@ -1,707 +1,1559 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+      content="width=device-width,
+      initial-scale=1,
+      maximum-scale=1,
+      user-scalable=no">
 
 <title>Echo</title>
 
 <style>
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
+
+*{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
 }
 
-html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    font-family: Arial, Helvetica, sans-serif;
-    color: white;
-    background: #05060a;
+html,
+body{
+
+    width:100%;
+    height:100%;
+
+    margin:0;
+
+    overflow:hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    color:white;
+
+    background:#03050a;
 }
 
-body {
-    position: relative;
-}
+/* =====================================
+   FUTURISTIC BACKGROUND
+===================================== */
 
-/* Animated background */
+#background{
 
-.background {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
+    position:fixed;
+
+    inset:0;
+
+    overflow:hidden;
+
     background:
-        radial-gradient(circle at 20% 15%, rgba(76,110,255,.22), transparent 32%),
-        radial-gradient(circle at 85% 25%, rgba(174,67,255,.18), transparent 30%),
-        radial-gradient(circle at 50% 90%, rgba(0,210,255,.12), transparent 35%),
-        linear-gradient(145deg,#05060a,#0b0d15 55%,#05060a);
+
+    radial-gradient(
+        circle at 15% 15%,
+        rgba(70,100,255,.28),
+        transparent 30%
+    ),
+
+    radial-gradient(
+        circle at 85% 20%,
+        rgba(180,60,255,.24),
+        transparent 30%
+    ),
+
+    radial-gradient(
+        circle at 50% 100%,
+        rgba(0,210,255,.18),
+        transparent 38%
+    ),
+
+    linear-gradient(
+        145deg,
+        #020309,
+        #090d19,
+        #03050a
+    );
 }
 
-.orb {
-    position: absolute;
-    width: 260px;
-    height: 260px;
-    border-radius: 50%;
-    filter: blur(70px);
-    opacity: .22;
-    animation: float 12s ease-in-out infinite;
+/* glowing orbs */
+
+.orb{
+
+    position:absolute;
+
+    width:260px;
+    height:260px;
+
+    border-radius:50%;
+
+    filter:blur(70px);
+
+    opacity:.25;
+
+    animation:
+        floatOrb 12s
+        ease-in-out
+        infinite;
 }
 
-.orb.one {
-    background: #526dff;
-    top: -80px;
-    left: -80px;
+.orb1{
+
+    background:#536dff;
+
+    left:-100px;
+    top:-70px;
 }
 
-.orb.two {
-    background: #b44cff;
-    right: -100px;
-    top: 25%;
-    animation-delay: -4s;
+.orb2{
+
+    background:#b44cff;
+
+    right:-100px;
+    top:25%;
+
+    animation-delay:-4s;
 }
 
-.orb.three {
-    background: #00d9ff;
-    bottom: -120px;
-    left: 30%;
-    animation-delay: -8s;
+.orb3{
+
+    background:#00d9ff;
+
+    bottom:-130px;
+    left:35%;
+
+    animation-delay:-8s;
 }
 
-@keyframes float {
-    0%,100% {
-        transform: translate(0,0) scale(1);
+@keyframes floatOrb{
+
+    0%,100%{
+
+        transform:
+            translate(0,0)
+            scale(1);
     }
 
-    50% {
-        transform: translate(35px,-25px) scale(1.12);
+    50%{
+
+        transform:
+            translate(35px,-30px)
+            scale(1.15);
     }
 }
 
-/* Main */
+/* futuristic grid */
 
-#home {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    padding: 52px 22px 25px;
-    display: flex;
-    flex-direction: column;
-    z-index: 2;
+.grid{
+
+    position:absolute;
+
+    inset:-50%;
+
+    opacity:.08;
+
+    background-image:
+
+        linear-gradient(
+            rgba(255,255,255,.2)
+            1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.2)
+            1px,
+            transparent 1px
+        );
+
+    background-size:45px 45px;
+
+    transform:
+        perspective(500px)
+        rotateX(60deg);
+
+    animation:
+        gridMove 18s
+        linear
+        infinite;
 }
 
-.clock {
-    text-align: center;
-    font-size: clamp(58px,17vw,100px);
-    line-height: .95;
-    font-weight: 300;
-    letter-spacing: -5px;
-    text-shadow: 0 10px 40px rgba(0,0,0,.4);
+@keyframes gridMove{
+
+    from{
+        transform:
+            perspective(500px)
+            rotateX(60deg)
+            translateY(0);
+    }
+
+    to{
+        transform:
+            perspective(500px)
+            rotateX(60deg)
+            translateY(90px);
+    }
 }
 
-.date {
-    text-align: center;
-    margin-top: 10px;
-    color: rgba(255,255,255,.68);
-    font-size: 15px;
-    letter-spacing: .6px;
+/* =====================================
+   HOME
+===================================== */
+
+#home{
+
+    position:relative;
+
+    z-index:2;
+
+    width:100%;
+    height:100%;
+
+    padding:
+        45px
+        20px
+        18px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    transition:
+        transform .45s cubic-bezier(.2,.8,.2,1),
+        opacity .35s ease;
 }
 
-.greeting {
-    margin-top: 32px;
-    font-size: 24px;
-    font-weight: 600;
-    text-align: center;
+/* top brand */
+
+.brand{
+
+    text-align:center;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    letter-spacing:6px;
+
+    color:
+        rgba(255,255,255,.7);
+
+    margin-bottom:20px;
 }
 
-/* Search */
+/* clock */
 
-.search {
-    margin: 25px auto 0;
-    width: min(520px,100%);
-    height: 58px;
-    border-radius: 30px;
-    background: rgba(255,255,255,.09);
-    border: 1px solid rgba(255,255,255,.11);
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow:
-        0 12px 40px rgba(0,0,0,.22),
-        inset 0 1px rgba(255,255,255,.08);
+.clock{
+
+    text-align:center;
+
+    font-size:
+        clamp(
+            64px,
+            18vw,
+            105px
+        );
+
+    line-height:.9;
+
+    font-weight:200;
+
+    letter-spacing:-5px;
+
+    text-shadow:
+        0 10px 40px
+        rgba(0,0,0,.5);
 }
 
-.search span {
-    font-size: 21px;
-    opacity: .65;
-    margin-right: 12px;
+.date{
+
+    text-align:center;
+
+    margin-top:13px;
+
+    color:
+        rgba(255,255,255,.58);
+
+    font-size:14px;
+
+    letter-spacing:1px;
 }
 
-.search input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: white;
-    font-size: 16px;
+.greeting{
+
+    text-align:center;
+
+    margin-top:27px;
+
+    font-size:20px;
+
+    font-weight:600;
 }
 
-.search input::placeholder {
-    color: rgba(255,255,255,.48);
-}
+/* =====================================
+   SEARCH
+===================================== */
 
-/* Favorite apps */
+.search{
 
-.favorites {
-    margin-top: auto;
-    display: grid;
-    grid-template-columns: repeat(4,1fr);
-    gap: 18px;
-    width: min(440px,100%);
-    margin-left: auto;
-    margin-right: auto;
-    padding-bottom: 18px;
-}
+    width:
+        min(
+            520px,
+            100%
+        );
 
-.app {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    user-select: none;
-}
+    height:56px;
 
-.icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 19px;
-    background: rgba(255,255,255,.10);
-    border: 1px solid rgba(255,255,255,.12);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,.28);
-    transition: transform .18s ease;
-}
+    margin:
+        22px auto 0;
 
-.icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+    display:flex;
 
-.icon:active {
-    transform: scale(.86);
-}
+    align-items:center;
 
-.app-name {
-    font-size: 11px;
-    color: rgba(255,255,255,.75);
-    max-width: 76px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+    padding:0 20px;
 
-/* Bottom dock */
+    border-radius:30px;
 
-.dock {
-    width: min(500px,100%);
-    min-height: 78px;
-    margin: 0 auto;
-    border-radius: 30px;
-    padding: 10px 14px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background: rgba(255,255,255,.09);
-    border: 1px solid rgba(255,255,255,.12);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    box-shadow:
-        0 18px 55px rgba(0,0,0,.35),
-        inset 0 1px rgba(255,255,255,.08);
-}
-
-.dock .icon {
-    width: 53px;
-    height: 53px;
-    border-radius: 17px;
-}
-
-/* Drawer */
-
-#drawer {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    transform: translateY(105%);
-    transition: transform .42s cubic-bezier(.22,.8,.2,1);
     background:
-        radial-gradient(circle at 50% 0%,rgba(89,111,255,.18),transparent 40%),
-        rgba(5,6,10,.96);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    padding: 45px 20px 25px;
+        rgba(255,255,255,.08);
+
+    border:
+        1px solid
+        rgba(255,255,255,.12);
+
+    backdrop-filter:
+        blur(25px);
+
+    box-shadow:
+
+        0 15px 45px
+        rgba(0,0,0,.3),
+
+        inset 0 1px
+        rgba(255,255,255,.1);
+
+    transition:.25s ease;
 }
 
-#drawer.open {
-    transform: translateY(0);
+.search:focus-within{
+
+    transform:
+        scale(1.02);
+
+    border-color:
+        rgba(130,150,255,.5);
+
+    box-shadow:
+        0 0 35px
+        rgba(80,100,255,.18);
 }
 
-.drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
+.search-icon{
+
+    font-size:21px;
+
+    opacity:.6;
+
+    margin-right:12px;
 }
 
-.drawer-title {
-    font-size: 27px;
-    font-weight: 700;
+.search input{
+
+    width:100%;
+
+    border:0;
+
+    outline:0;
+
+    background:transparent;
+
+    color:white;
+
+    font-size:16px;
 }
 
-.close {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.08);
-    color: white;
-    font-size: 20px;
+.search input::placeholder{
+
+    color:
+        rgba(255,255,255,.42);
 }
 
-.drawer-search {
-    height: 52px;
-    border-radius: 26px;
-    border: 1px solid rgba(255,255,255,.1);
-    background: rgba(255,255,255,.08);
-    color: white;
-    outline: none;
-    padding: 0 20px;
-    width: 100%;
-    margin-bottom: 20px;
-    font-size: 16px;
+/* =====================================
+   FAVORITES
+===================================== */
+
+.favorites{
+
+    margin-top:auto;
+
+    width:
+        min(
+            440px,
+            100%
+        );
+
+    margin-left:auto;
+    margin-right:auto;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:17px;
+
+    padding-bottom:20px;
 }
 
-.apps-grid {
-    height: calc(100% - 145px);
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(4,1fr);
-    gap: 24px 10px;
-    padding: 5px 2px 50px;
+/* =====================================
+   APP ICON
+===================================== */
+
+.app{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:8px;
+
+    animation:
+        iconAppear .5s
+        cubic-bezier(.2,.8,.2,1)
+        both;
 }
 
-.apps-grid::-webkit-scrollbar {
-    display: none;
-}
+@keyframes iconAppear{
 
-.drawer-app {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    animation: appear .35s ease both;
-}
+    from{
 
-.drawer-app .icon {
-    width: 65px;
-    height: 65px;
-}
+        opacity:0;
 
-@keyframes appear {
-    from {
-        opacity: 0;
-        transform: translateY(15px) scale(.9);
+        transform:
+            translateY(15px)
+            scale(.8);
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+    to{
+
+        opacity:1;
+
+        transform:
+            translateY(0)
+            scale(1);
     }
 }
 
-/* Hint */
+.icon{
 
-.swipe-hint {
-    text-align: center;
-    color: rgba(255,255,255,.28);
-    font-size: 10px;
-    letter-spacing: 1px;
-    margin-top: 8px;
+    width:66px;
+    height:66px;
+
+    border-radius:22px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    overflow:hidden;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.16),
+            rgba(255,255,255,.05)
+        );
+
+    border:
+        1px solid
+        rgba(255,255,255,.16);
+
+    backdrop-filter:
+        blur(25px);
+
+    box-shadow:
+
+        0 12px 35px
+        rgba(0,0,0,.35),
+
+        inset 0 1px
+        rgba(255,255,255,.14);
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease;
 }
 
-/* Small screens */
+.icon img{
 
-@media(max-height:650px) {
-    #home {
-        padding-top: 25px;
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+}
+
+.app:active .icon{
+
+    transform:
+        scale(.78);
+
+    box-shadow:
+        0 0 35px
+        rgba(100,130,255,.45);
+}
+
+.app-name{
+
+    max-width:75px;
+
+    font-size:10px;
+
+    color:
+        rgba(255,255,255,.72);
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+}
+
+/* =====================================
+   DOCK
+===================================== */
+
+.dock{
+
+    width:
+        min(
+            500px,
+            100%
+        );
+
+    min-height:75px;
+
+    margin:0 auto;
+
+    padding:9px 12px;
+
+    display:flex;
+
+    justify-content:
+        space-around;
+
+    align-items:center;
+
+    border-radius:32px;
+
+    background:
+        rgba(255,255,255,.085);
+
+    border:
+        1px solid
+        rgba(255,255,255,.14);
+
+    backdrop-filter:
+        blur(30px);
+
+    box-shadow:
+
+        0 20px 60px
+        rgba(0,0,0,.4),
+
+        inset 0 1px
+        rgba(255,255,255,.1);
+}
+
+.dock .icon{
+
+    width:52px;
+    height:52px;
+
+    border-radius:17px;
+}
+
+/* =====================================
+   SWIPE INDICATOR
+===================================== */
+
+.swipe-hint{
+
+    text-align:center;
+
+    margin-top:9px;
+
+    color:
+        rgba(255,255,255,.28);
+
+    font-size:9px;
+
+    letter-spacing:2px;
+
+    animation:
+        pulseHint 2s
+        ease-in-out
+        infinite;
+}
+
+@keyframes pulseHint{
+
+    0%,100%{
+        opacity:.25;
+        transform:translateY(0);
     }
 
-    .greeting {
-        margin-top: 18px;
-    }
-
-    .favorites {
-        margin-top: 15px;
+    50%{
+        opacity:.7;
+        transform:translateY(-3px);
     }
 }
+
+/* =====================================
+   DRAWER
+===================================== */
+
+#drawer{
+
+    position:fixed;
+
+    inset:0;
+
+    z-index:20;
+
+    padding:
+        38px
+        18px
+        25px;
+
+    background:
+
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(80,100,255,.2),
+            transparent 35%
+        ),
+
+        rgba(3,5,10,.96);
+
+    backdrop-filter:
+        blur(30px);
+
+    transform:
+        translateY(105%);
+
+    transition:
+        transform .5s
+        cubic-bezier(.18,.85,.2,1);
+}
+
+#drawer.open{
+
+    transform:
+        translateY(0);
+}
+
+/* drawer header */
+
+.drawer-header{
+
+    display:flex;
+
+    justify-content:
+        space-between;
+
+    align-items:center;
+
+    margin-bottom:18px;
+}
+
+.drawer-title{
+
+    font-size:29px;
+
+    font-weight:700;
+}
+
+.close{
+
+    width:45px;
+    height:45px;
+
+    border-radius:50%;
+
+    border:
+        1px solid
+        rgba(255,255,255,.14);
+
+    background:
+        rgba(255,255,255,.08);
+
+    color:white;
+
+    font-size:23px;
+}
+
+/* drawer search */
+
+.drawer-search{
+
+    width:100%;
+
+    height:53px;
+
+    border-radius:27px;
+
+    border:
+        1px solid
+        rgba(255,255,255,.12);
+
+    background:
+        rgba(255,255,255,.08);
+
+    color:white;
+
+    outline:none;
+
+    padding:
+        0 20px;
+
+    font-size:16px;
+
+    backdrop-filter:
+        blur(20px);
+
+    margin-bottom:16px;
+}
+
+/* =====================================
+   ALPHABET BAR
+===================================== */
+
+.alphabet{
+
+    position:absolute;
+
+    right:5px;
+
+    top:150px;
+
+    bottom:40px;
+
+    width:22px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:
+        space-evenly;
+
+    align-items:center;
+
+    z-index:5;
+
+    color:
+        rgba(255,255,255,.45);
+
+    font-size:9px;
+}
+
+.alphabet span{
+
+    transition:.15s;
+}
+
+.alphabet span:active{
+
+    color:white;
+
+    transform:
+        scale(1.7);
+}
+
+/* =====================================
+   APP GRID
+===================================== */
+
+.apps-grid{
+
+    height:
+        calc(
+            100% - 145px
+        );
+
+    overflow-y:auto;
+
+    padding:
+        8px
+        22px
+        70px
+        4px;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:
+        25px
+        10px;
+}
+
+.apps-grid::-webkit-scrollbar{
+
+    display:none;
+}
+
+.drawer-app{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:8px;
+
+    animation:
+        drawerAppear .4s
+        cubic-bezier(.2,.8,.2,1)
+        both;
+}
+
+.drawer-app .icon{
+
+    width:67px;
+    height:67px;
+
+    border-radius:22px;
+}
+
+@keyframes drawerAppear{
+
+    from{
+
+        opacity:0;
+
+        transform:
+            translateY(18px)
+            scale(.75);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+}
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media(max-height:680px){
+
+    #home{
+
+        padding-top:22px;
+    }
+
+    .brand{
+
+        margin-bottom:8px;
+    }
+
+    .greeting{
+
+        margin-top:15px;
+    }
+
+    .search{
+
+        margin-top:15px;
+    }
+
+    .favorites{
+
+        margin-top:20px;
+    }
+
+    .icon{
+
+        width:58px;
+        height:58px;
+    }
+}
+
 </style>
+
 </head>
 
 <body>
 
-<div class="background">
-    <div class="orb one"></div>
-    <div class="orb two"></div>
-    <div class="orb three"></div>
+<!-- BACKGROUND -->
+
+<div id="background">
+
+    <div class="grid"></div>
+
+    <div class="orb orb1"></div>
+
+    <div class="orb orb2"></div>
+
+    <div class="orb orb3"></div>
+
 </div>
+
 
 <!-- HOME -->
 
 <div id="home">
 
-    <div class="clock" id="clock">12:00</div>
+    <div class="brand">
+        E C H O
+    </div>
 
-    <div class="date" id="date">
+    <div
+        class="clock"
+        id="clock">
+        12:00
+    </div>
+
+    <div
+        class="date"
+        id="date">
         Loading...
     </div>
 
-    <div class="greeting" id="greeting">
+    <div
+        class="greeting"
+        id="greeting">
         Welcome to Echo
     </div>
 
     <div class="search">
-        <span>⌕</span>
+
+        <div class="search-icon">
+            ⌕
+        </div>
+
         <input
             id="homeSearch"
-            type="text"
             placeholder="Search apps"
             autocomplete="off">
+
     </div>
 
-    <div class="favorites" id="favorites"></div>
+    <div
+        class="favorites"
+        id="favorites">
+    </div>
 
-    <div class="dock" id="dock"></div>
+    <div
+        class="dock"
+        id="dock">
+    </div>
 
     <div class="swipe-hint">
-        SWIPE UP FOR APPS
+        ↑ SWIPE UP FOR ALL APPS ↑
     </div>
 
 </div>
 
-<!-- APP DRAWER -->
+
+<!-- DRAWER -->
 
 <div id="drawer">
 
     <div class="drawer-header">
 
         <div class="drawer-title">
-            All Apps
+            Apps
         </div>
 
-        <button class="close" onclick="closeDrawer()">
+        <button
+            class="close"
+            onclick="closeDrawer()">
+
             ×
+
         </button>
 
     </div>
 
     <input
-        class="drawer-search"
         id="drawerSearch"
-        type="text"
-        placeholder="Search apps..."
+        class="drawer-search"
+        placeholder="Search everything..."
         autocomplete="off">
 
-    <div class="apps-grid" id="appsGrid"></div>
+
+    <!-- A-Z -->
+
+    <div
+        class="alphabet"
+        id="alphabet">
+    </div>
+
+
+    <!-- APPLICATIONS -->
+
+    <div
+        class="apps-grid"
+        id="appsGrid">
+    </div>
 
 </div>
+
 
 <script>
 
 let apps = [];
+
 let startY = 0;
-let endY = 0;
 
-/* Clock */
 
-function updateClock() {
+/* =====================================
+   CLOCK
+===================================== */
 
-    const now = new Date();
+function updateClock(){
 
-    let hours = now.getHours();
-    const minutes = String(now.getMinutes()).padStart(2,"0");
+    const now =
+        new Date();
 
-    const ampm = hours >= 12 ? "PM" : "AM";
+    let hours =
+        now.getHours();
 
-    hours = hours % 12 || 12;
+    const minutes =
+        String(
+            now.getMinutes()
+        ).padStart(2,"0");
 
-    document.getElementById("clock").textContent =
-        hours + ":" + minutes;
+    hours =
+        hours % 12 || 12;
 
-    document.getElementById("date").textContent =
-        now.toLocaleDateString(undefined,{
-            weekday:"long",
-            month:"long",
-            day:"numeric"
-        });
+    document
+        .getElementById("clock")
+        .textContent =
+            hours +
+            ":" +
+            minutes;
 
-    const h = now.getHours();
+    document
+        .getElementById("date")
+        .textContent =
+            now.toLocaleDateString(
+                undefined,
+                {
+                    weekday:"long",
+                    month:"long",
+                    day:"numeric"
+                }
+            );
 
-    let greeting = "Good evening";
+    const h =
+        now.getHours();
+
+    let greeting =
+        "Good evening";
 
     if(h < 12)
-        greeting = "Good morning";
+        greeting =
+            "Good morning";
 
     else if(h < 18)
-        greeting = "Good afternoon";
+        greeting =
+            "Good afternoon";
 
-    document.getElementById("greeting").textContent =
-        greeting + " • Echo";
+    document
+        .getElementById("greeting")
+        .textContent =
+            greeting +
+            " • Echo";
 }
 
-setInterval(updateClock,1000);
+setInterval(
+    updateClock,
+    1000
+);
+
 updateClock();
 
 
-/* Receive apps from Java */
+/* =====================================
+   RECEIVE ANDROID APPS
+===================================== */
 
-function receiveApps(json) {
+function receiveApps(json){
 
-    try {
+    try{
 
-        apps = JSON.parse(json);
+        apps =
+            JSON.parse(json);
 
-        apps.sort((a,b) =>
-            a.name.localeCompare(b.name)
+        apps.sort(
+            (a,b) =>
+                a.name.localeCompare(
+                    b.name
+                )
         );
 
-        renderDrawer(apps);
         renderHome();
 
-    } catch(e) {
+        renderDrawer(
+            apps
+        );
 
-        console.log("App loading error",e);
+        buildAlphabet();
 
+    }
+    catch(error){
+
+        console.log(
+            "Echo app error:",
+            error
+        );
     }
 }
 
 
-/* Create app element */
+/* =====================================
+   CREATE APP
+===================================== */
 
-function createApp(app, drawer=false) {
+function createApp(
+    app,
+    drawer = false
+){
 
     const element =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     element.className =
-        drawer ? "drawer-app" : "app";
+        drawer
+            ? "drawer-app"
+            : "app";
 
     element.innerHTML = `
 
         <div class="icon">
-            <img src="data:image/png;base64,${app.icon}">
+
+            <img
+                src="data:image/png;base64,${app.icon}">
+
         </div>
 
         <div class="app-name">
-            ${escapeHtml(app.name)}
+
+            ${escapeHtml(
+                app.name
+            )}
+
         </div>
 
     `;
 
-    element.onclick = function() {
+    element.onclick =
+        function(){
 
-        if(window.Android) {
+            if(
+                window.Android
+            ){
 
-            Android.launchApp(app.package);
+                Android.launchApp(
+                    app.package
+                );
 
-        }
-
-    };
+            }
+        };
 
     return element;
 }
 
 
-/* Home apps */
+/* =====================================
+   HOME
+===================================== */
 
-function renderHome() {
+function renderHome(){
 
     const favorites =
-        document.getElementById("favorites");
+        document
+            .getElementById(
+                "favorites"
+            );
 
     const dock =
-        document.getElementById("dock");
+        document
+            .getElementById(
+                "dock"
+            );
 
     favorites.innerHTML = "";
+
     dock.innerHTML = "";
 
-    const selected = apps.slice(0,4);
 
-    selected.forEach(app => {
+    /* favorites */
 
-        favorites.appendChild(
-            createApp(app)
+    apps
+        .slice(0,4)
+        .forEach(
+            (app,index) => {
+
+                const el =
+                    createApp(
+                        app
+                    );
+
+                el.style.animationDelay =
+                    (index * .08) +
+                    "s";
+
+                favorites
+                    .appendChild(
+                        el
+                    );
+            }
         );
 
-    });
 
-    const dockApps = apps.slice(0,5);
+    /* dock */
 
-    dockApps.forEach(app => {
+    apps
+        .slice(0,5)
+        .forEach(
+            app => {
 
-        const el = createApp(app);
+                const el =
+                    createApp(
+                        app
+                    );
 
-        const icon =
-            el.querySelector(".icon");
+                const name =
+                    el.querySelector(
+                        ".app-name"
+                    );
 
-        const name =
-            el.querySelector(".app-name");
+                if(name)
+                    name.style.display =
+                        "none";
 
-        if(name)
-            name.style.display = "none";
-
-        dock.appendChild(el);
-
-    });
+                dock.appendChild(
+                    el
+                );
+            }
+        );
 }
 
 
-/* Drawer */
+/* =====================================
+   DRAWER
+===================================== */
 
-function renderDrawer(list) {
+function renderDrawer(
+    list
+){
 
     const grid =
-        document.getElementById("appsGrid");
+        document
+            .getElementById(
+                "appsGrid"
+            );
 
     grid.innerHTML = "";
 
-    list.forEach((app,index) => {
+    list.forEach(
+        (app,index) => {
 
-        const el =
-            createApp(app,true);
+            const el =
+                createApp(
+                    app,
+                    true
+                );
 
-        el.style.animationDelay =
-            Math.min(index * .015,.3) + "s";
+            el.style.animationDelay =
+                Math.min(
+                    index * .018,
+                    .35
+                ) + "s";
 
-        grid.appendChild(el);
+            grid.appendChild(
+                el
+            );
+        }
+    );
+}
 
+
+/* =====================================
+   A-Z MENU
+===================================== */
+
+function buildAlphabet(){
+
+    const alphabet =
+        document.getElementById(
+            "alphabet"
+        );
+
+    alphabet.innerHTML = "";
+
+    const letters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    for(
+        let letter of letters
+    ){
+
+        const span =
+            document.createElement(
+                "span"
+            );
+
+        span.textContent =
+            letter;
+
+        span.onclick =
+            () => {
+
+                jumpToLetter(
+                    letter
+                );
+
+            };
+
+        alphabet.appendChild(
+            span
+        );
+    }
+}
+
+
+function jumpToLetter(
+    letter
+){
+
+    const index =
+        apps.findIndex(
+            app =>
+                app.name
+                    .toUpperCase()
+                    .startsWith(
+                        letter
+                    )
+        );
+
+    if(index < 0)
+        return;
+
+    const grid =
+        document.getElementById(
+            "appsGrid"
+        );
+
+    const rows =
+        Math.floor(
+            index / 4
+        );
+
+    grid.scrollTo({
+        top:
+            rows * 100,
+        behavior:
+            "smooth"
     });
 }
 
 
-/* Search */
+/* =====================================
+   SEARCH
+===================================== */
 
 document
-.getElementById("drawerSearch")
-.addEventListener("input",function(){
+    .getElementById(
+        "drawerSearch"
+    )
+    .addEventListener(
+        "input",
+        function(){
 
-    const q =
-        this.value.toLowerCase();
+            const q =
+                this.value
+                    .toLowerCase()
+                    .trim();
 
-    const filtered =
-        apps.filter(app =>
-            app.name.toLowerCase().includes(q)
+            const filtered =
+                apps.filter(
+                    app =>
+                        app.name
+                            .toLowerCase()
+                            .includes(q)
+                );
+
+            renderDrawer(
+                filtered
+            );
+        }
+    );
+
+
+document
+    .getElementById(
+        "homeSearch"
+    )
+    .addEventListener(
+        "focus",
+        function(){
+
+            openDrawer();
+
+            setTimeout(
+                () => {
+
+                    const search =
+                        document
+                            .getElementById(
+                                "drawerSearch"
+                            );
+
+                    search.focus();
+
+                },
+                400
+            );
+        }
+    );
+
+
+/* =====================================
+   DRAWER
+===================================== */
+
+function openDrawer(){
+
+    document
+        .getElementById(
+            "drawer"
+        )
+        .classList.add(
+            "open"
+        );
+}
+
+
+function closeDrawer(){
+
+    document
+        .getElementById(
+            "drawer"
+        )
+        .classList.remove(
+            "open"
         );
 
-    renderDrawer(filtered);
-
-});
-
-
-document
-.getElementById("homeSearch")
-.addEventListener("focus",function(){
-
-    openDrawer();
-
-    setTimeout(() => {
-
-        document
-        .getElementById("drawerSearch")
-        .focus();
-
-    },350);
-
-});
-
-
-/* Drawer controls */
-
-function openDrawer() {
-
     document
-    .getElementById("drawer")
-    .classList.add("open");
+        .getElementById(
+            "drawerSearch"
+        )
+        .value = "";
 
-}
-
-function closeDrawer() {
-
-    document
-    .getElementById("drawer")
-    .classList.remove("open");
-
+    renderDrawer(
+        apps
+    );
 }
 
 
-/* Swipe gestures */
+/* =====================================
+   SWIPE
+===================================== */
 
-document.addEventListener("touchstart",function(e){
+document.addEventListener(
+    "touchstart",
+    function(e){
 
-    startY =
-        e.touches[0].clientY;
+        startY =
+            e.touches[0].clientY;
 
-});
-
-document.addEventListener("touchend",function(e){
-
-    endY =
-        e.changedTouches[0].clientY;
-
-    const distance =
-        endY - startY;
-
-    if(Math.abs(distance) < 70)
-        return;
-
-    if(distance < 0) {
-
-        openDrawer();
-
-    } else {
-
-        closeDrawer();
-
-    }
-
-});
+    },
+    {passive:true}
+);
 
 
-/* Escape HTML */
+document.addEventListener(
+    "touchend",
+    function(e){
 
-function escapeHtml(text) {
+        const endY =
+            e.changedTouches[0]
+                .clientY;
+
+        const distance =
+            endY - startY;
+
+        if(
+            Math.abs(distance)
+            < 70
+        )
+            return;
+
+        if(
+            distance < 0
+        ){
+
+            openDrawer();
+
+        }
+        else{
+
+            closeDrawer();
+
+        }
+
+    },
+    {passive:true}
+);
+
+
+/* =====================================
+   ESCAPE HTML
+===================================== */
+
+function escapeHtml(
+    text
+){
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
-    div.textContent = text;
+    div.textContent =
+        text;
 
     return div.innerHTML;
 }
 
 
-/* Ask Java for installed apps */
+/* =====================================
+   START ANDROID
+===================================== */
 
-if(window.Android) {
+if(window.Android){
 
     Android.getApps();
 
